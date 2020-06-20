@@ -11,11 +11,5 @@ template = {
 	'timestamp': time.time()
 	}
 collection = DB['paper']
-collection.insert(template)
-DB = Client["BPSS"]
-template = {
-	'file:': 'xxx',
-	'timestamp': time.time()
-	}
-collection = DB['pdfFile']
-collection.insert(template)
+res = collection.insert(template)
+print(res)

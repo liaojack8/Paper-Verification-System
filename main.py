@@ -4,10 +4,11 @@ import pdfAnalyser
 import hashGen
 import pymongo
 import hashlib
+import base64
 import time
 debug = True
 threshold = 0.3
-filePath = 'partsOfb.pdf'
+if debug:filePath = 'a.pdf'
 Client = pymongo.MongoClient("mongodb://localhost:27017/")
 DB = Client["BPSS"]
 collection = DB['paper']
@@ -56,7 +57,7 @@ def checkPlagiarism(TList):
 		else:
 			return True
 
-def upload(title, pdfHash, TList):
+def upload(title, pdfHash, TList, ts = time.time()):
 	collection = DB['paper']
 	uploadData = {
 	'title': title,
@@ -64,14 +65,21 @@ def upload(title, pdfHash, TList):
 	'pdfHash': pdfHash,
 	'allList': TList[0],
 	'combHash:': TList[1],
-	'timestamp': time.time()
+	'timestamp': ts
 	}
-	collection.insert(uploadData)
+	return collection.insert(uploadData)
 
-TList = getHash(filePath)
-pdfHash = fileHash(filePath)
-if checkExist(pdfHash):
-	if checkPlagiarism(TList):
-		upload('testTitle', pdfHash, TList)
-else:
-	print('This paper has been submitted before.')
+def flask_func(title, content, timestamp):
+	receivePdf = open('./bin/temp.fdp', 'bw')
+	receivePdf.write(base64.b64decode(content))
+	receivePdf.close()
+	TList = getHash('./bin/temp.fdp')
+	pdfHash = fileHash('./bin/temp.fdp')
+	if checkExist(pdfHash):
+		if checkPlagiarism(TList):
+			res = upload(title, pdfHash, TList, timestamp)
+			print(res)
+			return str(res)
+	else:
+		print('This paper has been submitted before.')
+		return 'This paper has been submitted before.'
